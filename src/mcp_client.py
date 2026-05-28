@@ -11,6 +11,7 @@ class MCPClient:
 
     def __init__(self, mcp_server_url: str = "https://api.example.com/mcp"):
         self.mcp_server_url = mcp_server_url
+        self._last_results: List[Dict] = []   # cache populated by search_jobs
         logging.info(f"MCPClient initialized with server: {self.mcp_server_url}")
 
     def search_jobs(self, keywords: str, location: Optional[str] = None, limit: int = 10) -> List[Dict]:
@@ -98,12 +99,16 @@ class MCPClient:
             },
         ]
 
-        return dummy_jobs[:limit]
+        self._last_results = dummy_jobs[:limit]
+        return self._last_results
 
     def get_job_details(self, job_id_on_source: str, source: str) -> Optional[Dict]:
-        """Retrieves detailed information for a specific job posting."""
+        """
+        Retrieves detailed information for a specific job posting.
+        Looks up from the cache populated by the most recent search_jobs call.
+        """
         logging.info(f"Getting details for job_id={job_id_on_source}, source={source}")
-        for job in self.search_jobs("dummy", limit=10):
+        for job in self._last_results:
             if job["job_id_on_source"] == job_id_on_source and job["source"] == source:
                 return job
         return None
